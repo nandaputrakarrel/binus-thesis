@@ -1,0 +1,43 @@
+{
+  "name": "binus-thesis",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "dev": "nodemon ./src/app.js",
+    "start": "node ./src/app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nandaputrakarrel/binus-thesis.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/nandaputrakarrel/binus-thesis/issues"
+  },
+  "homepage": "https://github.com/nandaputrakarrel/binus-thesis#readme",
+  "dependencies": {
+    "bcrypt": "^5.1.0",
+    "bcrypt-nodejs": "^0.0.3",
+    "body-parser": "^1.20.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.3",
+    "express": "^4.18.2",
+    "joi": "^17.7.0",
+    "jsonwebtoken": "^8.5.1",
+    "knex": "^2.3.0",
+    "moment": "^2.29.4",
+    "morgan": "^1.10.0",
+    "objection": "^3.0.1",
+    "objection-guid": "^3.1.0",
+    "pg": "^8.8.0",
+    "socket.io": "^4.5.4",
+    "socket.io-client": "^4.5.4"
+  },
+  "devDependencies": {
+    "eslint": "^8.28.0"
+  }
+}
