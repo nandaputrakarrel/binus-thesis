@@ -10,7 +10,6 @@ const DataNotFound = require('../exceptions/DataNotFound');
 const InvalidCredentials = require('../exceptions/InvalidCredentials');
 const InactiveUser = require('../exceptions/InactiveUser.js');
 const InvalidData = require('../exceptions/InvalidData');
-const UserNotFound = require('../exceptions/UserNotFound');
 
 
 const secretString = process.env.JWT_SECRET || 'binus-thesis';
@@ -51,7 +50,7 @@ async function signIn(user) {
   }
 
   userResult.token = await generateToken(userResult.email);
-  
+
   await updateLastLogin(userResult.email, new Date());
 
   return userResult;
@@ -78,6 +77,17 @@ async function refreshToken(email) {
 async function verifyToken(token) {
   try {
     jwt.verify(token, secretString);
+  } catch (err) {
+    throw new InvalidCredentials();
+  }
+}
+
+async function verifyTokenAdmin(token) {
+  try {
+    const sub = jwt.verify(token, secretString).sub;
+    if (sub != process.env.ADMIN_EMAIL) {
+      throw new InvalidCredentials();
+    }
   } catch (err) {
     throw new InvalidCredentials();
   }
@@ -129,10 +139,6 @@ async function getUserByEmail(email) {
     .select('email', 'fullName')
     .where('email', email)
     .first();
-
-  if (!user) {
-    throw new UserNotFound();
-  }
 
   return user;
 }
@@ -187,6 +193,7 @@ module.exports = {
   generateToken,
   refreshToken,
   verifyToken,
+  verifyTokenAdmin,
   changePassword,
   getEmailFromToken,
   getUserByEmail,

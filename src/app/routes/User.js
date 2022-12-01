@@ -4,6 +4,7 @@ const router = express.Router();
 const UserController = require('../controllers/UserController');
 const {handlerException} = require('../exceptions/handler');
 const authenticateToken = require('../validations/authenticateToken');
+const authenticateTokenAdmin = require('../validations/authenticateTokenAdmin');
 
 router.post('/auth/signin',
   handlerException(UserController.signIn));
@@ -15,6 +16,10 @@ router.get('/auth/refresh-token',
 router.post('/auth/change-password',
   handlerException(authenticateToken),
   handlerException(UserController.changePassword));
+
+router.post('/auth/create-user',
+  handlerException(authenticateTokenAdmin),
+  handlerException(UserController.createUser));
 
 router.get('/me',
   handlerException(authenticateToken),

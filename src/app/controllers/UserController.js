@@ -39,9 +39,18 @@ async function changePassword(req, res) {
   });
 }
 
+async function createUser(req, res) {
+  await UserService.createUser(req.body);
+  res.status(201).send({
+    status: 201,
+    message: 'User created!',
+  });
+}
+
 module.exports = {
   signIn,
   refreshToken,
   getSelf,
   changePassword,
+  createUser,
 }
