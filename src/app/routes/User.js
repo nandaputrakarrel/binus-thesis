@@ -25,4 +25,12 @@ router.get('/me',
   handlerException(authenticateToken),
   handlerException(UserController.getSelf));
 
+router.get('/me/notifications',
+  handlerException(authenticateToken),
+  handlerException(UserController.getNotification));
+
+router.get('/me/notifications/read-all',
+  handlerException(authenticateToken),
+  handlerException(UserController.updateNotificationReadAll));
+
 module.exports = router;

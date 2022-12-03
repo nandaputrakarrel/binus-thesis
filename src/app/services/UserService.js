@@ -4,6 +4,7 @@ const Joi = require('joi');
 const jwt = require('jsonwebtoken');
 
 const Users = require('../models/Users');
+const Notification = require('../models/Notifications');
 
 const DataExisted = require('../exceptions/DataExisted');
 const DataNotFound = require('../exceptions/DataNotFound');
@@ -188,6 +189,27 @@ async function updateLastLogin(email, lastLogin) {
   }
 }
 
+async function getNotification({page, size, token}) {
+  const email = jwt.verify(token, secretString).sub;
+  const result = await Notification.query()
+  .where('email', email);
+
+  return {
+    results: size === '*' ? result : result.slice((page - 1) * size, page * size),
+    total: result.length,
+  };
+}
+
+async function updateNotificationReadAll(token) {
+  const email = jwt.verify(token, secretString).sub;
+
+  await Notification.query()
+  .update({
+    isRead: true
+  })
+  .where('email', email);
+}
+
 module.exports = {
   signIn,
   generateToken,
@@ -198,4 +220,6 @@ module.exports = {
   getEmailFromToken,
   getUserByEmail,
   createUser,
+  getNotification,
+  updateNotificationReadAll,
 }

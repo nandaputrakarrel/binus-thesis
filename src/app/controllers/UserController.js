@@ -22,8 +22,8 @@ async function refreshToken(req, res) {
 
 
 async function getSelf(req, res) {
-  const email = await UserService.getemailFromToken(req.header('Authorization').split(' ')[1]);
-  const user = await UserService.getUser(email);
+  const email = await UserService.getEmailFromToken(req.header('Authorization').split(' ')[1]);
+  const user = await UserService.getUserByEmail(email);
   res.status(200).send({
     status: 200,
     data: user,
@@ -47,10 +47,40 @@ async function createUser(req, res) {
   });
 }
 
+async function getNotification(req, res) {
+  const page = req.query.page || 1;
+  const size = req.query.size || 10;
+  const token = req.header('Authorization');
+  const result = await UserService.getNotification({
+    page: page,
+    size: size,
+    token: token.split(' ')[1]
+  });
+  res.status(200).send({
+    status: 200,
+    paging: {
+      totalData: result.total,
+      totalPage: Math.ceil(result.total / size),
+    },
+    data: result.results,
+  });
+}
+
+async function updateNotificationReadAll(req, res) {
+  const token = req.header('Authorization');
+  await UserService.updateNotificationReadAll(token.split(' ')[1]);
+  res.status(200).send({
+    status: 200,
+    data: 'Notification Successfully marked as read.',
+  });
+}
+
 module.exports = {
   signIn,
   refreshToken,
   getSelf,
   changePassword,
   createUser,
+  getNotification,
+  updateNotificationReadAll,
 }
