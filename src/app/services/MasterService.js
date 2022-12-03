@@ -96,17 +96,23 @@ async function getRecipes({page, size, sort, query}) {
     ops.andWhere('ingredientId', query.ingredientId)
   }
 
-  let result = await ops.orderBy(sortBy, orderBy);
+  const recipes = await ops.orderBy(sortBy, orderBy);
+  const result = [];
 
-  for(const eachResult of result) {
-    eachResult.fnb = fnbs.find((e) => e.fnbId == eachResult.fnbId);
-    eachResult.ingredient = ingredients.find((e) => e.ingredientId == eachResult.ingredientId);
-  }
-
-  if (query.search) {
-    result = result.filter(
-      (e) => e.fnb.name.toLowerCase().includes(query.search.toLowerCase() )
-      || e.ingredient.name.toLowerCase().includes(query.search.toLowerCase()));
+  for(const eachRecipe of recipes) {
+    eachRecipe.fnb = fnbs.find((e) => e.fnbId == eachRecipe.fnbId);
+    eachRecipe.ingredient = ingredients.find((e) => e.ingredientId == eachRecipe.ingredientId);
+    if (query.search) {
+      if (!eachRecipe.fnb || !eachRecipe.ingredient) {
+        continue;
+      }
+      
+      if (!eachRecipe.fnb.name.toLowerCase().includes(query.search.toLowerCase()) &&
+        !eachRecipe.ingredient.name.toLowerCase().includes(query.search.toLowerCase())) {
+          continue;
+        }
+    }
+    result.push(eachRecipe);
   }
 
   return {
