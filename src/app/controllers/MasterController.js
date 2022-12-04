@@ -84,6 +84,14 @@ async function createRecipe(req, res) {
   });
 }
 
+async function pushNotification(req, res) {
+  await MasterService.pushNotification();
+  res.status(200).send({
+    status: 200,
+    data: 'Notification Successfully Pushed.',
+  });
+}
+
 module.exports = {
   getFnb,
   getIngredients,
@@ -91,4 +99,5 @@ module.exports = {
   createFnb,
   createIngredient,
   createRecipe,
+  pushNotification,
 }

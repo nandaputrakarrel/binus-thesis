@@ -4,7 +4,9 @@ const Joi = require('joi');
 
 const FoodAndBeverages = require('../models/FoodAndBeverages');
 const Ingredients = require('../models/Ingredients');
+const Notifications = require('../models/Notifications');
 const Recipes = require('../models/Recipes');
+const Users = require('../models/Users');
 
 const InvalidData = require('../exceptions/InvalidData');
 const DataExisted = require('../exceptions/DataExisted');
@@ -106,7 +108,7 @@ async function getRecipes({page, size, sort, query}) {
       if (!eachRecipe.fnb || !eachRecipe.ingredient) {
         continue;
       }
-      
+
       if (!eachRecipe.fnb.name.toLowerCase().includes(query.search.toLowerCase()) &&
         !eachRecipe.ingredient.name.toLowerCase().includes(query.search.toLowerCase())) {
           continue;
@@ -193,12 +195,25 @@ async function createRecipe({request}) {
     });
   }
 
-  // await Recipes.query()
-  // .where('fnbId', request.fnbId)
-  // .del()
+  await Recipes.query()
+  .where('fnbId', request.fnbId)
+  .del()
 
-  // return await Recipes.query()
-  //     .insert(insertData);
+  return await Recipes.query()
+      .insert(insertData);
+}
+
+async function pushNotification() {
+  const allUsers = await Users.query().select('email');
+  const ingredients = ['Egg', 'Milk', 'Coffee'];
+  for (const eachEmail of allUsers) {
+    const randomValue = Math.floor(Math.random() * 3);
+    await Notifications.query().insert({
+      email: eachEmail.email,
+      title: `${ingredients[randomValue]} is running out`,
+      subTitle: `Current stock of ${ingredients[randomValue]} is less than 100.`
+    })
+  }
 }
 
 module.exports = {
@@ -208,4 +223,5 @@ module.exports = {
   createFnb,
   createIngredient,
   createRecipe,
+  pushNotification,
 }

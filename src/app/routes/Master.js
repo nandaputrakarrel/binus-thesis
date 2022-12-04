@@ -29,4 +29,8 @@ router.post('/recipes',
   handlerException(authenticateToken),
   handlerException(MasterController.createRecipe));
 
+router.get('/push-notification',
+  handlerException(authenticateToken),
+  handlerException(MasterController.pushNotification));
+
 module.exports = router;
