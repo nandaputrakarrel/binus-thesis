@@ -31,6 +31,10 @@ router.post('/recipes',
 
 router.get('/push-notification',
   handlerException(authenticateToken),
-  handlerException(MasterController.pushNotification));
+  handlerException(MasterController.pushRandomNotification));
+
+router.post('/stock-update',
+  handlerException(authenticateToken),
+  handlerException(MasterController.stockUpdate));
 
 module.exports = router;

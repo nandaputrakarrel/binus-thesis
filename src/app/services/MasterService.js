@@ -7,6 +7,7 @@ const Ingredients = require('../models/Ingredients');
 const Notifications = require('../models/Notifications');
 const Recipes = require('../models/Recipes');
 const Users = require('../models/Users');
+const UserNotifications = require('../models/UserNotifications');
 
 const InvalidData = require('../exceptions/InvalidData');
 const DataExisted = require('../exceptions/DataExisted');
@@ -46,7 +47,7 @@ async function getFnb({page, size, sort, query}) {
 }
 
 async function getIngredients({page, size, sort, query}) {
-  const ops = Ingredients.query().select('ingredientId', 'name', 'stock');
+  const ops = Ingredients.query().select('ingredientId', 'name', 'stock', 'stockTreshold');
 
   let sortBy = 'createdAt';
   let orderBy = 'asc';
@@ -149,6 +150,8 @@ async function createIngredient({request}) {
   const schema = Joi.object({
     'ingredientId': Joi.string().required(),
     'name': Joi.string().required(),
+    'stock': Joi.number().required(),
+    'stockTreshold': Joi.number().required(),
   });
 
   const {error} = schema.validate(request);
@@ -203,15 +206,80 @@ async function createRecipe({request}) {
       .insert(insertData);
 }
 
-async function pushNotification() {
+async function pushRandomNotification() {
   const allUsers = await Users.query().select('email');
   const ingredients = ['Egg', 'Milk', 'Coffee'];
+  const randomValue = Math.floor(Math.random() * 3);
+  const notification = await Notifications.query().insert({
+    title: `${ingredients[randomValue]} is running out`,
+    subTitle: `Current stock of ${ingredients[randomValue]} is less than 100.`
+  })
   for (const eachEmail of allUsers) {
-    const randomValue = Math.floor(Math.random() * 3);
-    await Notifications.query().insert({
-      email: eachEmail.email,
-      title: `${ingredients[randomValue]} is running out`,
-      subTitle: `Current stock of ${ingredients[randomValue]} is less than 100.`
+    await UserNotifications.query().insert({
+      notificationId: notification.notificationId,
+      email: eachEmail.email
+    })
+  }
+}
+
+async function stockUpdate({request}) {
+  const schema = Joi.object({
+    'isIn': Joi.boolean().required(),
+    'ingredients': Joi.array().items(
+      Joi.object({
+        'ingredientId': Joi.string().required(),
+        'amount': Joi.number().required(),
+      })
+    ).required(),
+  });
+
+  const {error} = schema.validate(request);
+
+  if (error) {
+    throw new InvalidData(error.details[0].message);
+  }
+
+  for(const eachIngredient of request.ingredients) {
+    if (request.isIn) {
+      await stockIn(eachIngredient);
+    } else {
+      await stockOut(eachIngredient);
+    }
+    pushNotification(eachIngredient)
+  }
+}
+
+async function stockIn({ingredientId, amount}) {
+  const selectedIngredient = await getIngredients({query: {ingredientId: ingredientId}});
+  if (selectedIngredient.total == 0) {
+    return;
+  }
+  await Ingredients.query()
+    .update({stock: selectedIngredient.results.stock + amount})
+    .where('ingredientId', ingredientId)
+}
+
+async function stockOut({ingredientId, amount}) {
+  const selectedIngredient = await getIngredients({query: {ingredientId: ingredientId}});
+  if (selectedIngredient.total == 0) {
+    return;
+  }
+  await Ingredients.query()
+    .update({stock: selectedIngredient.results.stock - amount})
+    .where('ingredientId', ingredientId)
+}
+
+async function pushNotification({ingredientId}) {
+  const selectedIngredient = await getIngredients({query: {ingredientId: ingredientId}});
+  const allUsers = await Users.query().select('email');
+  const notification = await Notifications.query().insert({
+    title: `${selectedIngredient.results.name} is running out`,
+    subTitle: `Current stock of ${selectedIngredient.results.name} is less than ${selectedIngredient.results.stockTreshold}.`
+  })
+  for (const eachEmail of allUsers) {
+    await UserNotifications.query().insert({
+      notificationId: notification.notificationId,
+      email: eachEmail.email
     })
   }
 }
@@ -223,5 +291,6 @@ module.exports = {
   createFnb,
   createIngredient,
   createRecipe,
-  pushNotification,
+  pushRandomNotification,
+  stockUpdate,
 }

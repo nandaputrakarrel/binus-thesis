@@ -84,11 +84,19 @@ async function createRecipe(req, res) {
   });
 }
 
-async function pushNotification(req, res) {
-  await MasterService.pushNotification();
+async function pushRandomNotification(req, res) {
+  await MasterService.pushRandomNotification();
   res.status(200).send({
     status: 200,
     data: 'Notification Successfully Pushed.',
+  });
+}
+
+async function stockUpdate(req, res) {
+  await MasterService.stockUpdate({request: req.body});
+  res.status(200).send({
+    status: 200,
+    data: 'Stock Successfully Updated.',
   });
 }
 
@@ -99,5 +107,6 @@ module.exports = {
   createFnb,
   createIngredient,
   createRecipe,
-  pushNotification,
+  pushRandomNotification,
+  stockUpdate
 }

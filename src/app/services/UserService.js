@@ -164,7 +164,7 @@ async function createUser(user) {
   }
 
   try {
-
+    await Users.query().insert(user);
     return await getUserByEmail(user.email);
   } catch (err) {
     throw new InvalidData(`Something wrong!`);

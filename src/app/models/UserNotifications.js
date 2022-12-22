@@ -4,13 +4,13 @@ const knex = require('../../db/knex');
 
 Model.knex(knex);
 
-class Users extends Model {
+class UserNotifications extends Model {
   static get tableName() {
-    return 'users';
+    return 'userNotifications';
   }
 
   static get idColumn() {
-    return 'email';
+    return ['email', 'notificationId'];
   }
 
   $beforeUpdate() {
@@ -18,4 +18,4 @@ class Users extends Model {
   }
 }
 
-module.exports = Users;
+module.exports = UserNotifications;

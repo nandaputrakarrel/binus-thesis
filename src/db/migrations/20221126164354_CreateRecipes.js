@@ -4,7 +4,7 @@ exports.up = function(knex) {
     table.increments('recipeId').primary();
     table.string('fnbId');
     table.string('ingredientId');
-    table.decimal('quantity', 18, 2);
+    table.integer('quantity');
     table.string('createdBy');
     table.string('updatedBy');
     table.timestamp('createdAt').defaultTo(knex.fn.now());

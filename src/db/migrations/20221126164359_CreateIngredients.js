@@ -3,7 +3,8 @@ exports.up = function(knex) {
   return knex.schema.createTable('ingredients', (table) => {
     table.string('ingredientId').primary();
     table.string('name');
-    table.decimal('stock', 18, 2);
+    table.integer('stock');
+    table.integer('stockTreshold');
     table.string('createdBy');
     table.string('updatedBy');
     table.timestamp('createdAt').defaultTo(knex.fn.now());
