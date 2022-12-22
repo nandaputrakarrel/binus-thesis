@@ -11,7 +11,6 @@ const UserNotifications = require('../models/UserNotifications');
 
 const InvalidData = require('../exceptions/InvalidData');
 const DataExisted = require('../exceptions/DataExisted');
-const DataNotFound = require('../exceptions/DataNotFound');
 
 async function getFnb({page, size, sort, query}) {
   const ops = FoodAndBeverages.query().select('fnbId', 'name');
@@ -25,17 +24,15 @@ async function getFnb({page, size, sort, query}) {
   if (query.search) {
     const search = query.search;
     ops.orWhere(raw('lower("name")'), 'like', '%'+search.toLowerCase()+'%');
+    ops.orWhere(raw('lower("fnbId")'), 'like', '%'+search.toLowerCase()+'%');
   }
 
   if (query.fnbId) {
     const result = await ops.where('fnbId', query.fnbId).first();
-    if (result) {
-      return {
-        results: result,
-        total: 1
-      }
+    return {
+      results: result ? result : null,
+      total: result ? 1 : 0
     }
-    throw new DataNotFound(`FnbId ${query.fnbId} is not found.`);
   }
 
   const result = await ops.orderBy(sortBy, orderBy);
@@ -59,13 +56,14 @@ async function getIngredients({page, size, sort, query}) {
   if (query.search) {
     const search = query.search;
     ops.orWhere(raw('lower("name")'), 'like', '%'+search.toLowerCase()+'%');
+    ops.orWhere(raw('lower("ingredientId")'), 'like', '%'+search.toLowerCase()+'%');
   }
 
   if (query.ingredientId) {
     const result = await ops.where('ingredientId', query.ingredientId).first();
     return {
-      results: result,
-      total: 1
+      results: result ? result : null,
+      total: result ? 1 : 0
     }
   }
 
@@ -79,7 +77,6 @@ async function getIngredients({page, size, sort, query}) {
 
 async function getRecipes({page, size, sort, query}) {
   const ops = Recipes.query().select('recipeId', 'fnbId', 'ingredientId', 'quantity');
-  ops.select()
 
   let sortBy = 'createdAt';
   let orderBy = 'asc';
@@ -111,7 +108,9 @@ async function getRecipes({page, size, sort, query}) {
       }
 
       if (!eachRecipe.fnb.name.toLowerCase().includes(query.search.toLowerCase()) &&
-        !eachRecipe.ingredient.name.toLowerCase().includes(query.search.toLowerCase())) {
+        !eachRecipe.fnb.fnbId.toLowerCase().includes(query.search.toLowerCase()) &&
+        !eachRecipe.ingredient.name.toLowerCase().includes(query.search.toLowerCase()) &&
+        !eachRecipe.ingredient.ingredientId.toLowerCase().includes(query.search.toLowerCase())) {
           continue;
         }
     }
