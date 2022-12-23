@@ -92,6 +92,26 @@ async function pushRandomNotification(req, res) {
   });
 }
 
+async function getStocking(req, res) {
+  const page = req.query.page || 1;
+  const size = req.query.size || 10;
+  const sort = req.query.sort;
+  const result = await MasterService.getStocking({
+    page: page,
+    size: size,
+    sort: sort,
+    query: req.query
+  });
+  res.status(200).send({
+    status: 200,
+    paging: {
+      totalData: result.total,
+      totalPage: Math.ceil(result.total / size),
+    },
+    data: result.results,
+  });
+}
+
 async function stockUpdate(req, res) {
   await MasterService.stockUpdate({request: req.body});
   res.status(200).send({
@@ -108,5 +128,6 @@ module.exports = {
   createIngredient,
   createRecipe,
   pushRandomNotification,
+  getStocking,
   stockUpdate
 }

@@ -6,6 +6,8 @@ const FoodAndBeverages = require('../models/FoodAndBeverages');
 const Ingredients = require('../models/Ingredients');
 const Notifications = require('../models/Notifications');
 const Recipes = require('../models/Recipes');
+const StockingTransactionDetails = require('../models/StockingTransactionDetails')
+const StockingTransactions = require('../models/StockingTransactions')
 const Users = require('../models/Users');
 const UserNotifications = require('../models/UserNotifications');
 
@@ -221,6 +223,36 @@ async function pushRandomNotification() {
   }
 }
 
+async function getStocking({page, size, sort, query}) {
+  const ops = StockingTransactions.query().select('stockingId', 'kindOfIngredients', 'isIn', 'createdAt');
+  let sortBy = 'createdAt';
+  let orderBy = 'asc';
+  if (sort) {
+    sortBy = sort.split(':')[0];
+    orderBy = sort.split(':')[1];
+  }
+
+  if (query.stockingId) {
+    const result = await ops.where('stockingId', query.stockingId).first();
+    return {
+      results: result ? result : null,
+      total: result ? 1 : 0
+    }
+  }
+
+  const result = await ops.orderBy(sortBy, orderBy);
+  for(const eachStockTransaction of result) {
+    eachStockTransaction.ingredients = await StockingTransactionDetails.query()
+        .select('ingredientId', 'amount')
+        .where('stockingId', eachStockTransaction.stockingId);
+  }
+
+  return {
+    results: size === '*' ? result : result.slice((page - 1) * size, page * size),
+    total: result.length,
+  };
+}
+
 async function stockUpdate({request}) {
   const schema = Joi.object({
     'isIn': Joi.boolean().required(),
@@ -238,12 +270,23 @@ async function stockUpdate({request}) {
     throw new InvalidData(error.details[0].message);
   }
 
+  const stocking = await StockingTransactions.query().insert({
+    kindOfIngredients: request.ingredients.length,
+    isIn: request.isIn
+  })
+
   for(const eachIngredient of request.ingredients) {
     if (request.isIn) {
       await stockIn(eachIngredient);
     } else {
       await stockOut(eachIngredient);
     }
+    
+    await StockingTransactionDetails.query().insert({
+      stockingId: stocking.stockingId,
+      ingredientId: eachIngredient.ingredientId,
+      amount: eachIngredient.amount,
+    })
     pushNotification(eachIngredient)
   }
 }
@@ -291,5 +334,6 @@ module.exports = {
   createIngredient,
   createRecipe,
   pushRandomNotification,
+  getStocking,
   stockUpdate,
 }

@@ -37,4 +37,8 @@ router.post('/stock-update',
   handlerException(authenticateToken),
   handlerException(MasterController.stockUpdate));
 
+router.get('/stocks',
+  handlerException(authenticateToken),
+  handlerException(MasterController.getStocking));
+
 module.exports = router;
