@@ -1,7 +1,7 @@
 
 exports.up = function(knex) {
   return knex.schema.createTable('stockingTransactions', (table) => {
-    table.increments('stockingId').primary();
+    table.increments('stockingTransactionId').primary();
     table.integer('kindOfIngredients');
     table.boolean('isIn');
     table.timestamp('createdAt').defaultTo(knex.fn.now());

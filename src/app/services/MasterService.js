@@ -224,7 +224,7 @@ async function pushRandomNotification() {
 }
 
 async function getStocking({page, size, sort, query}) {
-  const ops = StockingTransactions.query().select('stockingId', 'kindOfIngredients', 'isIn', 'createdAt');
+  const ops = StockingTransactions.query().select('stockingTransactionId', 'kindOfIngredients', 'isIn', 'createdAt');
   let sortBy = 'createdAt';
   let orderBy = 'asc';
   if (sort) {
@@ -232,8 +232,8 @@ async function getStocking({page, size, sort, query}) {
     orderBy = sort.split(':')[1];
   }
 
-  if (query.stockingId) {
-    const result = await ops.where('stockingId', query.stockingId).first();
+  if (query.stockingTransactionId) {
+    const result = await ops.where('stockingTransactionId', query.stockingTransactionId).first();
     return {
       results: result ? result : null,
       total: result ? 1 : 0
@@ -242,9 +242,13 @@ async function getStocking({page, size, sort, query}) {
 
   const result = await ops.orderBy(sortBy, orderBy);
   for(const eachStockTransaction of result) {
-    eachStockTransaction.ingredients = await StockingTransactionDetails.query()
+    eachStockTransaction.details = await StockingTransactionDetails.query()
         .select('ingredientId', 'amount')
-        .where('stockingId', eachStockTransaction.stockingId);
+        .where('stockingTransactionId', eachStockTransaction.stockingTransactionId);
+    for(const eachDetail of eachStockTransaction.details) {
+      eachDetail.ingredientId = await Ingredients.query()
+      .where('ingredientId', eachDetail.ingredientId);
+    }
   }
 
   return {
@@ -283,7 +287,7 @@ async function stockUpdate({request}) {
     }
     
     await StockingTransactionDetails.query().insert({
-      stockingId: stocking.stockingId,
+      stockingTransactionId: stocking.stockingTransactionId,
       ingredientId: eachIngredient.ingredientId,
       amount: eachIngredient.amount,
     })
@@ -321,7 +325,8 @@ async function pushNotification({ingredientId}) {
   for (const eachEmail of allUsers) {
     await UserNotifications.query().insert({
       notificationId: notification.notificationId,
-      email: eachEmail.email
+      email: eachEmail.email,
+      isRead: false,
     })
   }
 }

@@ -10,7 +10,7 @@ class StockingTransactions extends Model {
   }
 
   static get idColumn() {
-    return 'stockingId';
+    return 'stockingTransactionId';
   }
 
   $beforeUpdate() {
