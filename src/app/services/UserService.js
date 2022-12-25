@@ -198,7 +198,7 @@ async function getNotification({page, size, token}) {
   .orderBy('userNotificationId', 'desc');
 
   for (const eachNotification of result) {
-    eachNotification.notificationId = await Notification.query().where('notificationId', eachNotification.notificationId)
+    eachNotification.notificationId = await Notification.query().where('notificationId', eachNotification.notificationId).first()
   }
 
   return {
