@@ -11,6 +11,7 @@ const DataNotFound = require('../exceptions/DataNotFound');
 const InvalidCredentials = require('../exceptions/InvalidCredentials');
 const InactiveUser = require('../exceptions/InactiveUser.js');
 const InvalidData = require('../exceptions/InvalidData');
+const UserNotifications = require('../models/UserNotifications');
 
 
 const secretString = process.env.JWT_SECRET || 'binus-thesis';
@@ -192,8 +193,9 @@ async function updateLastLogin(email, lastLogin) {
 
 async function getNotification({page, size, token}) {
   const email = jwt.verify(token, secretString).sub;
-  const result = await Notification.query()
-  .where('email', email);
+  const result = await UserNotifications.query()
+  .where('email', email)
+  .orderBy('notificationId', 'desc');
 
   return {
     results: size === '*' ? result : result.slice((page - 1) * size, page * size),
