@@ -195,7 +195,11 @@ async function getNotification({page, size, token}) {
   const email = jwt.verify(token, secretString).sub;
   const result = await UserNotifications.query()
   .where('email', email)
-  .orderBy('notificationId', 'desc');
+  .orderBy('userNotificationId', 'desc');
+
+  for (const eachNotification of result) {
+    eachNotification.notificationId = await Notification.query().where('notificationId', eachNotification.notificationId)
+  }
 
   return {
     results: size === '*' ? result : result.slice((page - 1) * size, page * size),
