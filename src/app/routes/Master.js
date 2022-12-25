@@ -29,6 +29,14 @@ router.post('/recipes',
   handlerException(authenticateToken),
   handlerException(MasterController.createRecipe));
 
+router.patch('/fnb/:fnbId',
+  handlerException(authenticateToken),
+  handlerException(MasterController.updateFnb));
+
+router.patch('/ingredients/:ingredientId',
+  handlerException(authenticateToken),
+  handlerException(MasterController.updateIngredient));
+
 router.get('/push-notification',
   handlerException(authenticateToken),
   handlerException(MasterController.pushRandomNotification));

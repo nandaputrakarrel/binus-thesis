@@ -13,6 +13,7 @@ const UserNotifications = require('../models/UserNotifications');
 
 const InvalidData = require('../exceptions/InvalidData');
 const DataExisted = require('../exceptions/DataExisted');
+const DataNotFound = require('../exceptions/DataNotFound');
 
 async function getFnb({page, size, sort, query}) {
   const ops = FoodAndBeverages.query().select('fnbId', 'name');
@@ -207,6 +208,52 @@ async function createRecipe({request}) {
       .insert(insertData);
 }
 
+async function updateFnb({request, id}) {
+  const schema = Joi.object({
+    'name': Joi.string().required(),
+  });
+
+  const {error} = schema.validate(request);
+
+  if (error) {
+    throw new InvalidData(error.details[0].message);
+  }
+
+  const checkExist = await getFnb({query: {fnbId: id}});
+
+  if (checkExist.total < 1 ) {
+    throw new DataNotFound(`FnbId ${id} is not found.`)
+  }
+
+  return await FoodAndBeverages.query()
+      .update(request)
+      .where('fnbId', id);
+}
+
+async function updateIngredient({request, id}) {
+  const schema = Joi.object({
+    'name': Joi.string().required(),
+    'stock': Joi.number().required(),
+    'stockTreshold': Joi.number().required(),
+  });
+
+  const {error} = schema.validate(request);
+
+  if (error) {
+    throw new InvalidData(error.details[0].message);
+  }
+  
+  const checkExist = await getIngredients({query: {ingredientId: id}});
+
+  if (checkExist.total < 1) {
+    throw new DataNotFound(`IngredientId ${id} is not found.`)
+  }
+
+  return await Ingredients.query()
+      .update(request)
+      .where('ingredientId', id);
+}
+
 async function pushRandomNotification() {
   const allUsers = await Users.query().select('email');
   const ingredients = ['Egg', 'Milk', 'Coffee'];
@@ -247,7 +294,7 @@ async function getStocking({page, size, sort, query}) {
         .where('stockingTransactionId', eachStockTransaction.stockingTransactionId);
     for(const eachDetail of eachStockTransaction.details) {
       eachDetail.ingredientId = await Ingredients.query()
-      .where('ingredientId', eachDetail.ingredientId);
+      .where('ingredientId', eachDetail.ingredientId).first();
     }
   }
 
@@ -276,7 +323,8 @@ async function stockUpdate({request}) {
 
   const stocking = await StockingTransactions.query().insert({
     kindOfIngredients: request.ingredients.length,
-    isIn: request.isIn
+    isIn: request.isIn,
+    createdAt: new Date.now()
   })
 
   for(const eachIngredient of request.ingredients) {
@@ -338,6 +386,8 @@ module.exports = {
   createFnb,
   createIngredient,
   createRecipe,
+  updateFnb,
+  updateIngredient,
   pushRandomNotification,
   getStocking,
   stockUpdate,

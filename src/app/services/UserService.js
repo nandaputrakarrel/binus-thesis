@@ -124,7 +124,8 @@ async function changePassword(request, token) {
   await Users.query()
       .update({
         password: bcrypt.hashSync(request.newPassword, salt),
-      });
+      })
+      .where('email', email);
 }
 
 async function getEmailFromToken(token) {

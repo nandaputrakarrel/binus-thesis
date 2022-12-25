@@ -84,6 +84,22 @@ async function createRecipe(req, res) {
   });
 }
 
+async function updateFnb(req, res) {
+  await MasterService.updateFnb({request: req.body, id: req.params.fnbId});
+  res.status(200).send({
+    status: 200,
+    data: 'Food and Beverages Successfully Updated.',
+  });
+}
+
+async function updateIngredient(req, res) {
+  await MasterService.updateIngredient({request: req.body, id: req.params.ingredientId});
+  res.status(200).send({
+    status: 200,
+    data: 'Ingredient Successfully Updated.',
+  });
+}
+
 async function pushRandomNotification(req, res) {
   await MasterService.pushRandomNotification();
   res.status(200).send({
@@ -127,6 +143,8 @@ module.exports = {
   createFnb,
   createIngredient,
   createRecipe,
+  updateFnb,
+  updateIngredient,
   pushRandomNotification,
   getStocking,
   stockUpdate
