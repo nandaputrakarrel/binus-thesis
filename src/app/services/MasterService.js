@@ -49,7 +49,7 @@ async function getFnb({page, size, sort, query}) {
 }
 
 async function getIngredients({page, size, sort, query}) {
-  const ops = Ingredients.query().select('ingredientId', 'name', 'stock', 'stockTreshold');
+  const ops = Ingredients.query().select('ingredientId', 'name', 'stock', 'stockTreshold', 'unit');
 
   let sortBy = 'createdAt';
   let orderBy = 'asc';
@@ -91,7 +91,7 @@ async function getRecipes({page, size, sort, query}) {
   }
 
   const fnbs = await FoodAndBeverages.query().select('fnbId', 'name');
-  const ingredients = await Ingredients.query().select('ingredientId', 'name', 'stock');
+  const ingredients = await Ingredients.query().select('ingredientId', 'name', 'stock', 'stockTreshold', 'unit');
 
   if (query.fnbId) {
     ops.andWhere('fnbId', query.fnbId)
@@ -105,17 +105,17 @@ async function getRecipes({page, size, sort, query}) {
   const result = [];
 
   for(const eachRecipe of recipes) {
-    eachRecipe.fnb = fnbs.find((e) => e.fnbId == eachRecipe.fnbId);
-    eachRecipe.ingredient = ingredients.find((e) => e.ingredientId == eachRecipe.ingredientId);
+    eachRecipe.fnbId = fnbs.find((e) => e.fnbId == eachRecipe.fnbId);
+    eachRecipe.ingredientId = ingredients.find((e) => e.ingredientId == eachRecipe.ingredientId);
     if (query.search) {
       if (!eachRecipe.fnb || !eachRecipe.ingredient) {
         continue;
       }
 
-      if (!eachRecipe.fnb.name.toLowerCase().includes(query.search.toLowerCase()) &&
-        !eachRecipe.fnb.fnbId.toLowerCase().includes(query.search.toLowerCase()) &&
-        !eachRecipe.ingredient.name.toLowerCase().includes(query.search.toLowerCase()) &&
-        !eachRecipe.ingredient.ingredientId.toLowerCase().includes(query.search.toLowerCase())) {
+      if (!eachRecipe.fnbId.name.toLowerCase().includes(query.search.toLowerCase()) &&
+        !eachRecipe.fnbId.fnbId.toLowerCase().includes(query.search.toLowerCase()) &&
+        !eachRecipe.ingredientId.name.toLowerCase().includes(query.search.toLowerCase()) &&
+        !eachRecipe.ingredientId.ingredientId.toLowerCase().includes(query.search.toLowerCase())) {
           continue;
         }
     }
@@ -156,6 +156,7 @@ async function createIngredient({request}) {
     'name': Joi.string().required(),
     'stock': Joi.number().required(),
     'stockTreshold': Joi.number().required(),
+    'unit': Joi.string().required(),
   });
 
   const {error} = schema.validate(request);
@@ -237,6 +238,7 @@ async function updateIngredient({request, id}) {
     'name': Joi.string().required(),
     'stock': Joi.number().required(),
     'stockTreshold': Joi.number().required(),
+    'unit': Joi.string().required(),
   });
 
   const {error} = schema.validate(request);
@@ -287,6 +289,10 @@ async function getStocking({page, size, sort, query}) {
       results: result ? result : null,
       total: result ? 1 : 0
     }
+  }
+
+  if (query.startDate && query.endDate) {
+    ops.whereBetween('createdAt', [query.startDate, query.endDate])
   }
 
   const result = await ops.orderBy(sortBy, orderBy);
@@ -367,7 +373,7 @@ async function stockOut({ingredientId, amount}) {
 async function pushNotification({ingredientId}) {
   const selectedIngredient = await getIngredients({query: {ingredientId: ingredientId}});
   if (selectedIngredient.stock >= selectedIngredient.stockTreshold) return;
-  
+
   const allUsers = await Users.query().select('email');
   const notification = await Notifications.query().insert({
     title: `${selectedIngredient.results.name} is running out`,
@@ -387,8 +393,6 @@ async function getDashboardCards() {
   const allRecipe = await Recipes.query();
   const lowIngredients = await Ingredients.query().whereRaw('stock < "stockTreshold"');
 
-  console.log(allFnbs)
-
   return [{
         title: allFnbs.length,
         content: 'Products registered.'
@@ -406,38 +410,49 @@ async function getDashboardChart({ingredientIds}) {
     throw new InvalidData();
   }
 
+  const lastData = await DailyIngredientRequirements.query()
+    .orderBy('requirementDate', 'desc')
+    .first();
+  const lastDate = lastData.requirementDate;
+  const firstDate = moment(lastDate).set('hour', 0).subtract(6, 'days')
+
   const labels = [];
   const resultData = []
 
-  for (const ingredientId of ingredientIds.split(',')) {
-    const selectedIngredient = await Ingredients.query()
-    .where('ingredientId', ingredientId)
-    .first();
+  const ingredients = await Ingredients.query()
+    .whereIn('ingredientId', ingredientIds.split(','));
 
+  for (const eachIngredient of ingredients) {
     const dailyRequirements = await DailyIngredientRequirements.query()
       .select('requirementDate','amount')
-      .where('ingredientId', ingredientId)
+      .where('ingredientId', eachIngredient.ingredientId)
+      .whereRaw(`"requirementDate" >= '${moment(firstDate).format('YYYY-MM-DD')}'`)
       .limit(7)
       .orderBy('requirementDate', 'desc');
 
     const ingredientData = []
+    let currentDate = firstDate;
 
-    for (const eachDailyRequirement of dailyRequirements) {
-      ingredientData.push(Math.ceil(eachDailyRequirement.amount))
-      if (labels.includes(moment(eachDailyRequirement.requirementDate).format("dddd, Do MMMM YYYY"))) {
+    for (let i = 0; i < 7; i++) {
+      const amount = dailyRequirements[i] ? dailyRequirements[i].amount : 0;
+      ingredientData.push(Math.ceil(amount))
+      if (labels.includes(moment(currentDate).format("Do MMM"))) {
         continue
       }
-      labels.push(moment(eachDailyRequirement.requirementDate).format("dddd, Do MMMM YYYY"));
+      labels.push(moment(currentDate).format("Do MMM"));
+      currentDate = moment(currentDate).add('day', 1)
+      console.log(currentDate)
     }
+    currentDate = firstDate;
 
     resultData.push({
-      label: `${selectedIngredient.ingredientId} - ${selectedIngredient.name}`,
-      data: ingredientData.reverse()
+      label: `${eachIngredient.ingredientId} - ${eachIngredient.name}`,
+      data: ingredientData
     });
   }
   
   return {
-    labels: labels.reverse(),
+    labels: labels,
     datasets: resultData
   }
 }
