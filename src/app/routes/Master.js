@@ -49,4 +49,12 @@ router.get('/stocks',
   handlerException(authenticateToken),
   handlerException(MasterController.getStocking));
 
+router.get('/dashboard/cards',
+  handlerException(authenticateToken),
+  handlerException(MasterController.getDashboardCards));
+
+router.get('/dashboard/chart',
+    handlerException(authenticateToken),
+    handlerException(MasterController.getDashboardChart));
+
 module.exports = router;

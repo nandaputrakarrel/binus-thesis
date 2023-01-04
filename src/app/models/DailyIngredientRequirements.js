@@ -1,27 +1,24 @@
 /* eslint-disable require-jsdoc */
 const {Model} = require('objection');
 const knex = require('../../db/knex');
-const Recipes = require('./Recipes');
+const Ingredients = require('./Ingredients');
 
 Model.knex(knex);
 
-class Ingredients extends Model {
+class DailyIngredientRequirements extends Model {
   static get tableName() {
-    return 'ingredients';
-  }
-
-  static get idColumn() {
-    return 'ingredientId';
+    return 'dailyIngredientRequirements';
   }
 
   static get relationMappings() {
     return {
       recipe: {
-        relation: Model.HasManyRelation,
-        modelClass: Recipes,
+        relation: Model.BelongsToOneRelation,
+        modelClass: Ingredients,
         join: {
-          from: 'ingredients.ingredientId',
-          to: 'recipe.ingredientId'
+          from: 'dailyIngredientRequirements.ingredientId',
+          to: 'ingredients.ingredientId'
+          
         }
       }
     }
@@ -36,4 +33,4 @@ class Ingredients extends Model {
   }
 }
 
-module.exports = Ingredients;
+module.exports = DailyIngredientRequirements;

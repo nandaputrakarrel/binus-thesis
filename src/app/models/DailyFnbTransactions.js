@@ -16,12 +16,16 @@ class DailyFnbTransactions extends Model {
         relation: Model.BelongsToOneRelation,
         modelClass: FoodAndBeverages,
         join: {
-          from: 'recipe.fnbId',
+          from: 'dailyFnbTransactions.fnbId',
           to: 'foodAndBeverages.fnbId'
           
         }
       }
     }
+  }
+
+  $beforeInsert() {
+    this.createdAt = 'now()';
   }
 
   $beforeUpdate() {

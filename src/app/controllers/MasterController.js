@@ -3,7 +3,7 @@ const MasterService = require('../services/MasterService');
 async function getFnb(req, res) {
   const page = req.query.page || 1;
   const size = req.query.size || 10;
-  const sort = req.query.sort;
+  const sort = req.query.sortBy;
   const result = await MasterService.getFnb({
     page: page,
     size: size,
@@ -23,7 +23,7 @@ async function getFnb(req, res) {
 async function getIngredients(req, res) {
   const page = req.query.page || 1;
   const size = req.query.size || 10;
-  const sort = req.query.sort;
+  const sort = req.query.sortBy;
   const result = await MasterService.getIngredients({
     page: page,
     size: size,
@@ -43,7 +43,7 @@ async function getIngredients(req, res) {
 async function getRecipes(req, res) {
   const page = req.query.page || 1;
   const size = req.query.size || 10;
-  const sort = req.query.sort;
+  const sort = req.query.sortBy;
   const result = await MasterService.getRecipes({
     page: page,
     size: size,
@@ -111,7 +111,7 @@ async function pushRandomNotification(req, res) {
 async function getStocking(req, res) {
   const page = req.query.page || 1;
   const size = req.query.size || 10;
-  const sort = req.query.sort;
+  const sort = req.query.sortBy;
   const result = await MasterService.getStocking({
     page: page,
     size: size,
@@ -136,6 +136,22 @@ async function stockUpdate(req, res) {
   });
 }
 
+async function getDashboardCards(req, res) {
+  const response = await MasterService.getDashboardCards();
+  res.status(200).send({
+    status: 200,
+    data: response,
+  });
+}
+
+async function getDashboardChart(req, res) {
+  const response = await MasterService.getDashboardChart({ingredientIds: req.query.ingredientIds});
+  res.status(200).send({
+    status: 200,
+    data: response,
+  });
+}
+
 module.exports = {
   getFnb,
   getIngredients,
@@ -147,5 +163,7 @@ module.exports = {
   updateIngredient,
   pushRandomNotification,
   getStocking,
-  stockUpdate
+  stockUpdate,
+  getDashboardCards,
+  getDashboardChart
 }

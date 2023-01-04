@@ -27,6 +27,10 @@ class FoodAndBeverages extends Model {
     }
   }
 
+  $beforeInsert() {
+    this.createdAt = 'now()';
+  }
+
   $beforeUpdate() {
     this.updatedAt = 'now()';
   }

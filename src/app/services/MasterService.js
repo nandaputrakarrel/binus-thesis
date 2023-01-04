@@ -1,6 +1,7 @@
 require('dotenv').config();
 const {raw} = require('objection');
 const Joi = require('joi');
+const moment = require('moment')
 
 const FoodAndBeverages = require('../models/FoodAndBeverages');
 const Ingredients = require('../models/Ingredients');
@@ -14,6 +15,7 @@ const UserNotifications = require('../models/UserNotifications');
 const InvalidData = require('../exceptions/InvalidData');
 const DataExisted = require('../exceptions/DataExisted');
 const DataNotFound = require('../exceptions/DataNotFound');
+const DailyIngredientRequirements = require('../models/DailyIngredientRequirements');
 
 async function getFnb({page, size, sort, query}) {
   const ops = FoodAndBeverages.query().select('fnbId', 'name');
@@ -323,8 +325,7 @@ async function stockUpdate({request}) {
 
   const stocking = await StockingTransactions.query().insert({
     kindOfIngredients: request.ingredients.length,
-    isIn: request.isIn,
-    createdAt: new Date.now()
+    isIn: request.isIn
   })
 
   for(const eachIngredient of request.ingredients) {
@@ -365,6 +366,8 @@ async function stockOut({ingredientId, amount}) {
 
 async function pushNotification({ingredientId}) {
   const selectedIngredient = await getIngredients({query: {ingredientId: ingredientId}});
+  if (selectedIngredient.stock >= selectedIngredient.stockTreshold) return;
+  
   const allUsers = await Users.query().select('email');
   const notification = await Notifications.query().insert({
     title: `${selectedIngredient.results.name} is running out`,
@@ -376,6 +379,66 @@ async function pushNotification({ingredientId}) {
       email: eachEmail.email,
       isRead: false,
     })
+  }
+}
+
+async function getDashboardCards() {
+  const allFnbs = await FoodAndBeverages.query();
+  const allRecipe = await Recipes.query();
+  const lowIngredients = await Ingredients.query().whereRaw('stock < "stockTreshold"');
+
+  console.log(allFnbs)
+
+  return [{
+        title: allFnbs.length,
+        content: 'Products registered.'
+      }, {
+        title: allRecipe.length,
+        content: 'Recipes registered.'
+      }, {
+        title: lowIngredients.length,
+        content: 'Ingredients below stock.'
+      }]
+}
+
+async function getDashboardChart({ingredientIds}) {
+  if (!ingredientIds) {
+    throw new InvalidData();
+  }
+
+  const labels = [];
+  const resultData = []
+
+  for (const ingredientId of ingredientIds.split(',')) {
+    const selectedIngredient = await Ingredients.query()
+    .where('ingredientId', ingredientId)
+    .first();
+
+    const dailyRequirements = await DailyIngredientRequirements.query()
+      .select('requirementDate','amount')
+      .where('ingredientId', ingredientId)
+      .limit(7)
+      .orderBy('requirementDate', 'desc');
+
+    const ingredientData = []
+
+    for (const eachDailyRequirement of dailyRequirements) {
+      ingredientData.push(Math.ceil(eachDailyRequirement.amount))
+      if (labels.includes(moment(eachDailyRequirement.requirementDate).format("dddd, Do MMMM YYYY"))) {
+        continue
+      }
+      labels.push(moment(eachDailyRequirement.requirementDate).format("dddd, Do MMMM YYYY"));
+    }
+
+    resultData.push({
+      label: `${selectedIngredient.ingredientId} - ${selectedIngredient.name}`,
+      data: ingredientData.reverse()
+    });
+  }
+  
+  return {
+    labels: labels.reverse(),
+    datasets: resultData
   }
 }
 
@@ -391,4 +454,6 @@ module.exports = {
   pushRandomNotification,
   getStocking,
   stockUpdate,
+  getDashboardCards,
+  getDashboardChart
 }

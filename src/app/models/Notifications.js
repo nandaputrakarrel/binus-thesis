@@ -13,6 +13,10 @@ class Notifications extends Model {
     return 'notificationId';
   }
 
+  $beforeInsert() {
+    this.createdAt = 'now()';
+  }
+
   $beforeUpdate() {
     this.updatedAt = 'now()';
   }

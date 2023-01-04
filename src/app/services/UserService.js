@@ -166,9 +166,15 @@ async function createUser(user) {
   }
 
   try {
-    await Users.query().insert(user);
+    await Users.query().insert({
+      email: user.email,
+      fullName: user.fullName,
+      password: bcrypt.hashSync(user.password, salt),
+      isActive: true
+    });
     return await getUserByEmail(user.email);
   } catch (err) {
+    console.log(err)
     throw new InvalidData(`Something wrong!`);
   }
 }
@@ -210,7 +216,7 @@ async function getNotification({page, size, token}) {
 async function updateNotificationReadAll(token) {
   const email = jwt.verify(token, secretString).sub;
 
-  await Notification.query()
+  await UserNotifications.query()
   .update({
     isRead: true
   })

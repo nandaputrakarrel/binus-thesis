@@ -13,6 +13,10 @@ class UserNotifications extends Model {
     return ['email', 'notificationId'];
   }
 
+  $beforeInsert() {
+    this.createdAt = 'now()';
+  }
+
   $beforeUpdate() {
     this.updatedAt = 'now()';
   }

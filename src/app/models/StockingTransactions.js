@@ -13,6 +13,10 @@ class StockingTransactions extends Model {
     return 'stockingTransactionId';
   }
 
+  $beforeInsert() {
+    this.createdAt = 'now()';
+  }
+
   $beforeUpdate() {
     this.updatedAt = 'now()';
   }

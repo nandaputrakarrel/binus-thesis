@@ -13,6 +13,10 @@ class Users extends Model {
     return 'email';
   }
 
+  $beforeInsert() {
+    this.createdAt = 'now()';
+  }
+
   $beforeUpdate() {
     this.updatedAt = 'now()';
   }
